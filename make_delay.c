@@ -12,7 +12,7 @@ int main()
     {
         fprintf(c, "__declspec(dllexport) void delay%03X() { }\n", i);
         fprintf(h, " void delay%03X();\n", i);
-        fprintf(h, " void *__imp_delay%03X;\n", i);
+        fprintf(h, " void * volatile __imp_delay%03X;\n", i);
         fprintf(r, " void delay%03X();\n", i);
     }
 
