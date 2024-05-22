@@ -15,6 +15,7 @@ DWORD threadId[3];
 HANDLE event, thread[3];
 void* volatile initial_imp_delay000;
 __int64 sequence;
+PVOID veh;
 
 void Print(const char* a, ...)
 {
@@ -44,20 +45,24 @@ void SleepInfinite()
 //
 //// This also makes it OK to Sleep here.
 //
-long ExceptionHandler(PEXCEPTION_POINTERS exception)
+long ExceptionHandler(PCSTR name, PEXCEPTION_POINTERS exception)
 // Step thread1 until __imp_delay000 changes. Then let thread2 resume and run forever.
 // With the bug, thread2 should access violate.
 {
     DWORD const exceptionCode = exception->ExceptionRecord->ExceptionCode;
-    //Print("ExceptionHandler: %I64x %X %p %X\n", InterlockedIncrement64(&sequence), GetCurrentThreadId(), (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
+    //Print("%s: %I64x tid:%X eh:%X %p %X\n", name, InterlockedIncrement64(&sequence), GetCurrentThreadId(), exceptionCode, (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
     if (GetCurrentThreadId() != threadId[1] /*|| exceptionCode != STATUS_SINGLE_STEP*/)
     {
         return EXCEPTION_CONTINUE_SEARCH;
     }
-    //Print("ExceptionHandler: %I64x %X %X %p %X\n", InterlockedIncrement64(&sequence), GetCurrentThreadId(), exceptionCode, (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
+    //Print("%s: %I64x tid:%X eh:%X %p %X\n", name, InterlockedIncrement64(&sequence), GetCurrentThreadId(), exceptionCode, (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
     if (initial_imp_delay000 != __imp_delay000)
     {
-        Print("initial_imp_delay000 != __imp_delay000: %p %p\n", initial_imp_delay000, __imp_delay000);
+        Print("%s: initial_imp_delay000 != __imp_delay000: %p %p\n", name, initial_imp_delay000, __imp_delay000);
+        if (veh)
+        {
+            //RemoveVectoredExceptionHandler(veh);
+        }
 #if VEH
         // make home space
         for (int i = 0; i < 0x30; ++i)
@@ -77,6 +82,16 @@ long ExceptionHandler(PEXCEPTION_POINTERS exception)
     return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+long VExceptionHandler(PEXCEPTION_POINTERS exception)
+{
+    return ExceptionHandler("VExceptionHandler", exception);
+}
+
+long SExceptionHandler(PEXCEPTION_POINTERS exception)
+{
+    return ExceptionHandler("SExceptionHandler", exception);
+}
+
 #define SetTrapFlag() \
     __writeeflags(__readeflags() | TRAP_FLAG)
 
@@ -91,7 +106,7 @@ DWORD Thread1(PVOID p)
         Print("Thread1 %d Should not get here\n", __LINE__);
     }
 #if SEH
-    __except(ExceptionHandler(GetExceptionInformation())) { }
+    __except(SExceptionHandler(GetExceptionInformation())) { }
 #else
     __except(1) { }
 #endif
@@ -144,7 +159,7 @@ int main()
     initial_imp_delay000 = __imp_delay000;
 
 #if VEH
-    AddVectoredExceptionHandler(0, ExceptionHandler);
+    veh = AddVectoredExceptionHandler(0, VExceptionHandler);
 #endif
     event = CreateEventW(0, 0, 0, 0);
     threadId[0] = GetCurrentThreadId();
