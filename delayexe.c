@@ -7,6 +7,7 @@
 #include "excpt.h"
 void DbgPrintEx(int, int, const char*, ...);
 
+// SEH does not currently work. VEH works.
 #define VEH 1
 #define SEH 0
 
@@ -47,12 +48,13 @@ long ExceptionHandler(PEXCEPTION_POINTERS exception)
 // Step thread1 until __imp_delay000 changes. Then let thread2 resume and run forever.
 // With the bug, thread2 should access violate.
 {
+    DWORD const exceptionCode = exception->ExceptionRecord->ExceptionCode;
     //Print("ExceptionHandler: %I64x %X %p %X\n", InterlockedIncrement64(&sequence), GetCurrentThreadId(), (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
-    if (GetCurrentThreadId() != threadId[1])
+    if (GetCurrentThreadId() != threadId[1] /*|| exceptionCode != STATUS_SINGLE_STEP*/)
     {
         return EXCEPTION_CONTINUE_SEARCH;
     }
-    //Print("ExceptionHandler: %I64x %X %X %p %X\n", InterlockedIncrement64(&sequence), GetCurrentThreadId(), exception->ExceptionRecord->ExceptionCode, (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
+    //Print("ExceptionHandler: %I64x %X %X %p %X\n", InterlockedIncrement64(&sequence), GetCurrentThreadId(), exceptionCode, (void*)exception->ContextRecord->Rip, *(unsigned char*)exception->ContextRecord->Rip);
     if (initial_imp_delay000 != __imp_delay000)
     {
         Print("initial_imp_delay000 != __imp_delay000: %p %p\n", initial_imp_delay000, __imp_delay000);
@@ -127,6 +129,12 @@ void* page_of(void* p)
 
 int main()
 {
+    if (IsDebuggerPresent())
+    {
+        printf("This program does not work in a debugger.\n");
+        exit(1);
+    }
+
     // delayload import address table pages.
     void* diat_page0 = page_of(&__imp_delay000);
     void* diat_page1 = page_of(&__imp_delay200);
