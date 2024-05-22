@@ -5,7 +5,7 @@ LFLAGS=-incremental:no
 all: delaydll.dll delayexe.exe
 
 clean:
-	del /f *.exe *.obj *.pdb *.ilk delay.h delaydll.*
+	del /f *.exe *.obj *.pdb *.ilk delay.h delaydll.* delayref.* *.lib *.exp
 
 OBJS=   delaydll.$O \
         delayexe.$O \
