@@ -1,5 +1,6 @@
-This is a test of a race condition
-in 14.41pre.
+This is a test of a race condition in 14.41pre.
+
+https://developercommunity.visualstudio.com/t/delayload-race-crash-regression-in-1441/10661431
 
 The test has two pages of delayloads.
 
