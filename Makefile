@@ -10,15 +10,20 @@ clean:
 OBJS=   delaydll.$O \
         delayexe.$O \
 
-make_delay.exe: make_delay.c
+.SUFFIXES: .c .obj
+
+.c.obj:
+	cl /c $(CFLAGS) $<
+
+make_delay.exe: make_delay.obj
 	cl $(CFLAGS) $(@R).c /link /incremental:no
 
 delaydll.c delay.h: make_delay.exe
 	make_delay.exe
 
-delaydll.lib delaydll.dll: delaydll.c delay.h
+delaydll.lib delaydll.dll: delaydll.obj delay.h
 	cl /LD $(CFLAGS) $(@R).c /link /incremental:no
 
-delayexe.exe: delayexe.c delay.h delaydll.lib
-	cl $(CFLAGS) $(@R).c /link /incremental:no
+delayexe.exe: delayexe.obj delayref.obj delay.h delaydll.lib
+	cl $(CFLAGS) delayexe.obj delayref.obj /link /incremental:no delaydll.lib /delayload:delaydll.dll delayimp.lib
 
