@@ -58,7 +58,7 @@ long ExceptionHandler(PEXCEPTION_POINTERS exception)
         Print("initial_imp_delay000 != __imp_delay000: %p %p\n", initial_imp_delay000, __imp_delay000);
 #if VEH
         // make home space
-        for (int i = 0; i < 0x20; ++i)
+        for (int i = 0; i < 0x30; ++i)
         {
             *(volatile char*)exception->ContextRecord->Rsp;
             --exception->ContextRecord->Rsp;
