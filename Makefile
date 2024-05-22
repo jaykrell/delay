@@ -24,6 +24,6 @@ delaydll.c delay.h: make_delay.exe
 delaydll.lib delaydll.dll: delaydll.obj delay.h
 	cl /LD $(CFLAGS) $(@R).c /link /incremental:no
 
-delayexe.exe: delayexe.obj delayref.obj delay.h delaydll.lib
-	cl $(CFLAGS) delayexe.obj delayref.obj /link /incremental:no delaydll.lib /delayload:delaydll.dll delayimp.lib
+delayexe.exe: delayexe.obj delay.h delaydll.lib
+	cl $(CFLAGS) delayexe.obj /link /incremental:no delaydll.lib /delayload:delaydll.dll delayimp.lib
 
