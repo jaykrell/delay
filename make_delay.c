@@ -10,5 +10,6 @@ int main()
     {
         fprintf(c, "__declspec(dllexport) void delay%d() { }\n", i);
         fprintf(h, " void delay%d();\n", i);
+        fprintf(h, " void (*__imp_delay%d)();\n", i);
     }
 }
